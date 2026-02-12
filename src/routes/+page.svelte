@@ -6,6 +6,7 @@
 	import CidrView from '$lib/CidrView.svelte';
 	import {
 		parseDatFileAuto,
+		parseDatFileAutoInWorker,
 		loadFromUrl,
 		type DatFileResult,
 		type GeoSiteEntry,
@@ -35,13 +36,16 @@
 
 	async function handleFile(file: File) {
 		error = null;
+		loading = true;
 		try {
 			const buffer = await file.arrayBuffer();
-			const result = parseDatFileAuto(buffer);
+			const result = await parseDatFileAutoInWorker(buffer);
 			fileData = result;
 			selectedCategory = result.data.entry?.[0]?.countryCode ?? null;
 		} catch (e) {
 			error = e instanceof Error ? e.message : String(e);
+		} finally {
+			loading = false;
 		}
 	}
 
@@ -61,7 +65,7 @@
 				if (!res.ok) throw new Error(`HTTP ${res.status}`);
 				buffer = await res.arrayBuffer();
 			}
-			const result = parseDatFileAuto(buffer);
+			const result = await parseDatFileAutoInWorker(buffer);
 			fileData = result;
 			selectedCategory = result.data.entry?.[0]?.countryCode ?? null;
 		} catch (e) {

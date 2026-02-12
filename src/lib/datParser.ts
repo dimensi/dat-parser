@@ -158,3 +158,27 @@ export async function loadFromUrl(
 }
 
 export { DEFAULT_ZKEEN_URL };
+
+let parseWorker: Worker | null = null;
+
+function getParseWorker(): Worker {
+	if (parseWorker) return parseWorker;
+	parseWorker = new Worker(new URL('./parseWorker.ts', import.meta.url), { type: 'module' });
+	return parseWorker;
+}
+
+/**
+ * Parse .dat buffer in a Web Worker so the main thread stays responsive.
+ * Transfers the buffer to the worker (main thread loses it).
+ */
+export function parseDatFileAutoInWorker(buffer: ArrayBuffer): Promise<DatFileResult> {
+	return new Promise((resolve, reject) => {
+		const worker = getParseWorker();
+		worker.onmessage = (e: MessageEvent<{ ok: true; result: DatFileResult } | { ok: false; error: string }>) => {
+			if (e.data.ok) resolve(e.data.result);
+			else reject(new Error(e.data.error));
+		};
+		worker.onerror = () => reject(new Error('Worker failed'));
+		worker.postMessage({ buffer }, [buffer]);
+	});
+}
