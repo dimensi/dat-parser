@@ -14,6 +14,7 @@ import FileDropZone from "$lib/FileDropZone.svelte";
 import UrlInput from "$lib/UrlInput.svelte";
 
 let fileData = $state<DatFileResult | null>(null);
+let fileName = $state<string | null>(null);
 let selectedCategory = $state<string | null>(null);
 let categoryFilter = $state("");
 let searchQuery = $state("");
@@ -44,6 +45,7 @@ async function handleFile(file: File) {
 		const buffer = await file.arrayBuffer();
 		const result = await parseDatFileAutoInWorker(buffer);
 		fileData = result;
+		fileName = file.name;
 		selectedCategory = result.data.entry?.[0]?.countryCode ?? null;
 	} catch (e) {
 		error = e instanceof Error ? e.message : String(e);
@@ -57,9 +59,17 @@ async function handleLoadUrl(url: string) {
 	loading = true;
 	try {
 		let buffer: ArrayBuffer;
+		const urlFileName = (() => {
+			try {
+				return new URL(url).pathname.split("/").pop() || url;
+			} catch {
+				return url;
+			}
+		})();
 		try {
 			const data = await loadFromUrl(url);
 			fileData = { kind: "geosite", data };
+			fileName = urlFileName;
 			selectedCategory = data.entry?.[0]?.countryCode ?? null;
 			return;
 		} catch (e) {
@@ -70,6 +80,7 @@ async function handleLoadUrl(url: string) {
 		}
 		const result = await parseDatFileAutoInWorker(buffer);
 		fileData = result;
+		fileName = urlFileName;
 		selectedCategory = result.data.entry?.[0]?.countryCode ?? null;
 	} catch (e) {
 		error = e instanceof Error ? e.message : String(e);
@@ -82,6 +93,10 @@ function selectCategory(code: string) {
 	selectedCategory = code;
 }
 </script>
+
+<svelte:head>
+	<title>{fileName ? `${fileName} — XKeen DAT Parser` : "XKeen DAT Parser"}</title>
+</svelte:head>
 
 <div class="mx-auto max-w-6xl space-y-8 px-4 py-8">
   <header class="space-y-2">
