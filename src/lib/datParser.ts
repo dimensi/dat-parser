@@ -1,11 +1,16 @@
-import protobuf from 'protobufjs';
-import protoRaw from './geo/geosite.proto?raw';
-import geoipProtoRaw from './geo/geoip.proto?raw';
+import protobuf from "protobufjs";
+import geoipProtoRaw from "./geo/geoip.proto?raw";
+import protoRaw from "./geo/geosite.proto?raw";
 
 /** Domain matching type (v2ray geosite). */
-export type DomainType = 'Plain' | 'Regex' | 'RootDomain' | 'Full';
+export type DomainType = "Plain" | "Regex" | "RootDomain" | "Full";
 
-const DOMAIN_TYPE_NAMES: DomainType[] = ['Plain', 'Regex', 'RootDomain', 'Full'];
+const DOMAIN_TYPE_NAMES: DomainType[] = [
+	"Plain",
+	"Regex",
+	"RootDomain",
+	"Full",
+];
 
 export interface DomainAttribute {
 	key: string;
@@ -45,8 +50,8 @@ export interface GeoIPListResult {
 }
 
 export type DatFileResult =
-	| { kind: 'geosite'; data: GeoSiteListResult }
-	| { kind: 'geoip'; data: GeoIPListResult };
+	| { kind: "geosite"; data: GeoSiteListResult }
+	| { kind: "geoip"; data: GeoIPListResult };
 
 let GeoSiteListType: protobuf.Type | null = null;
 let GeoIPListType: protobuf.Type | null = null;
@@ -54,8 +59,8 @@ let GeoIPListType: protobuf.Type | null = null;
 function getGeoSiteListType(): protobuf.Type {
 	if (GeoSiteListType) return GeoSiteListType;
 	const root = protobuf.parse(protoRaw).root;
-	const list = root.lookupType('GeoSiteList');
-	if (!list) throw new Error('GeoSiteList type not found in proto');
+	const list = root.lookupType("GeoSiteList");
+	if (!list) throw new Error("GeoSiteList type not found in proto");
 	GeoSiteListType = list;
 	return list;
 }
@@ -63,8 +68,8 @@ function getGeoSiteListType(): protobuf.Type {
 function getGeoIPListType(): protobuf.Type {
 	if (GeoIPListType) return GeoIPListType;
 	const root = protobuf.parse(geoipProtoRaw).root;
-	const list = root.lookupType('GeoIPList');
-	if (!list) throw new Error('GeoIPList type not found in proto');
+	const list = root.lookupType("GeoIPList");
+	if (!list) throw new Error("GeoIPList type not found in proto");
 	GeoIPListType = list;
 	return list;
 }
@@ -73,7 +78,7 @@ function getGeoIPListType(): protobuf.Type {
  * Decode domain type enum number to label.
  */
 export function domainTypeName(type: number): DomainType {
-	return DOMAIN_TYPE_NAMES[type] ?? 'Plain';
+	return DOMAIN_TYPE_NAMES[type] ?? "Plain";
 }
 
 /**
@@ -81,7 +86,7 @@ export function domainTypeName(type: number): DomainType {
  */
 export function cidrToString(ip: Uint8Array, prefix: number): string {
 	if (ip.length === 4) {
-		const a = Array.from(ip).join('.');
+		const a = Array.from(ip).join(".");
 		return `${a}/${prefix}`;
 	}
 	if (ip.length === 16) {
@@ -89,7 +94,10 @@ export function cidrToString(ip: Uint8Array, prefix: number): string {
 		for (let i = 0; i < 16; i += 2) {
 			parts.push(((ip[i]! << 8) | ip[i + 1]!).toString(16));
 		}
-		const s = parts.join(':').replace(/(^|:)0+($|:)/g, '$1::$2').replace(/:{2,}/g, '::');
+		const s = parts
+			.join(":")
+			.replace(/(^|:)0+($|:)/g, "$1::$2")
+			.replace(/:{2,}/g, "::");
 		return `${s}/${prefix}`;
 	}
 	return `?/${prefix}`;
@@ -114,16 +122,22 @@ export function parseGeoipFile(buffer: ArrayBuffer): GeoIPListResult {
 	const decoded = type.decode(uint8);
 	const obj = type.toObject(decoded, {
 		longs: Number,
-		bytes: Array
-	}) as { entry?: Array<{ countryCode?: string; cidr?: Array<{ ip: number[]; prefix: number }>; inverseMatch?: boolean }> };
+		bytes: Array,
+	}) as {
+		entry?: Array<{
+			countryCode?: string;
+			cidr?: Array<{ ip: number[]; prefix: number }>;
+			inverseMatch?: boolean;
+		}>;
+	};
 	const entry = obj.entry ?? [];
 	const normalized: GeoIPEntry[] = entry.map((e) => ({
-		countryCode: e.countryCode ?? '',
+		countryCode: e.countryCode ?? "",
 		cidr: (e.cidr ?? []).map((c) => ({
 			ip: new Uint8Array(c.ip),
-			prefix: c.prefix ?? 0
+			prefix: c.prefix ?? 0,
 		})),
-		inverseMatch: e.inverseMatch
+		inverseMatch: e.inverseMatch,
 	}));
 	return { entry: normalized };
 }
@@ -134,22 +148,22 @@ export function parseGeoipFile(buffer: ArrayBuffer): GeoIPListResult {
 export function parseDatFileAuto(buffer: ArrayBuffer): DatFileResult {
 	try {
 		const data = parseDatFile(buffer);
-		if (data.entry?.length) return { kind: 'geosite', data };
+		if (data.entry?.length) return { kind: "geosite", data };
 	} catch {
 		// not geosite
 	}
 	const data = parseGeoipFile(buffer);
-	return { kind: 'geoip', data };
+	return { kind: "geoip", data };
 }
 
 const DEFAULT_ZKEEN_URL =
-	'https://github.com/jameszeroX/zkeen-domains/releases/latest/download/zkeen.dat';
+	"https://github.com/jameszeroX/zkeen-domains/releases/latest/download/zkeen.dat";
 
 /**
  * Load and parse a .dat file from URL.
  */
 export async function loadFromUrl(
-	url: string = DEFAULT_ZKEEN_URL
+	url: string = DEFAULT_ZKEEN_URL,
 ): Promise<GeoSiteListResult> {
 	const res = await fetch(url);
 	if (!res.ok) throw new Error(`HTTP ${res.status}: ${url}`);
@@ -163,7 +177,9 @@ let parseWorker: Worker | null = null;
 
 function getParseWorker(): Worker {
 	if (parseWorker) return parseWorker;
-	parseWorker = new Worker(new URL('./parseWorker.ts', import.meta.url), { type: 'module' });
+	parseWorker = new Worker(new URL("./parseWorker.ts", import.meta.url), {
+		type: "module",
+	});
 	return parseWorker;
 }
 
@@ -171,14 +187,20 @@ function getParseWorker(): Worker {
  * Parse .dat buffer in a Web Worker so the main thread stays responsive.
  * Transfers the buffer to the worker (main thread loses it).
  */
-export function parseDatFileAutoInWorker(buffer: ArrayBuffer): Promise<DatFileResult> {
+export function parseDatFileAutoInWorker(
+	buffer: ArrayBuffer,
+): Promise<DatFileResult> {
 	return new Promise((resolve, reject) => {
 		const worker = getParseWorker();
-		worker.onmessage = (e: MessageEvent<{ ok: true; result: DatFileResult } | { ok: false; error: string }>) => {
+		worker.onmessage = (
+			e: MessageEvent<
+				{ ok: true; result: DatFileResult } | { ok: false; error: string }
+			>,
+		) => {
 			if (e.data.ok) resolve(e.data.result);
 			else reject(new Error(e.data.error));
 		};
-		worker.onerror = () => reject(new Error('Worker failed'));
+		worker.onerror = () => reject(new Error("Worker failed"));
 		worker.postMessage({ buffer }, [buffer]);
 	});
 }

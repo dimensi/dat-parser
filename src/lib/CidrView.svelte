@@ -1,36 +1,34 @@
 <script lang="ts">
-	import type { CidrEntry } from '$lib/datParser';
-	import { cidrToString } from '$lib/datParser';
+import type { CidrEntry } from "$lib/datParser";
+import { cidrToString } from "$lib/datParser";
 
-	interface Props {
-		cidrs: CidrEntry[];
-		searchQuery?: string;
-	}
+interface Props {
+	cidrs: CidrEntry[];
+	searchQuery?: string;
+}
 
-	let { cidrs = [], searchQuery = '' }: Props = $props();
+let { cidrs = [], searchQuery = "" }: Props = $props();
 
-	const PAGE_SIZES = [100, 200, 500] as const;
-	let pageSize = $state(200);
-	let currentPage = $state(1);
+const PAGE_SIZES = [100, 200, 500] as const;
+let pageSize = $state(200);
+let currentPage = $state(1);
 
-	const strings = $derived(cidrs.map((c) => cidrToString(c.ip, c.prefix)));
-	const filtered = $derived(
-		searchQuery.trim()
-			? strings.filter((s) => s.toLowerCase().includes(searchQuery.toLowerCase()))
-			: strings
-	);
+const strings = $derived(cidrs.map((c) => cidrToString(c.ip, c.prefix)));
+const filtered = $derived(
+	searchQuery.trim()
+		? strings.filter((s) => s.toLowerCase().includes(searchQuery.toLowerCase()))
+		: strings,
+);
 
-	const totalPages = $derived(Math.max(1, Math.ceil(filtered.length / pageSize)));
-	const page = $derived(Math.min(currentPage, totalPages));
-	const slice = $derived(
-		filtered.slice((page - 1) * pageSize, page * pageSize)
-	);
+const totalPages = $derived(Math.max(1, Math.ceil(filtered.length / pageSize)));
+const page = $derived(Math.min(currentPage, totalPages));
+const slice = $derived(filtered.slice((page - 1) * pageSize, page * pageSize));
 
-	$effect(() => {
-		searchQuery;
-		cidrs.length;
-		currentPage = 1;
-	});
+$effect(() => {
+	searchQuery;
+	cidrs.length;
+	currentPage = 1;
+});
 </script>
 
 {#if filtered.length === 0}

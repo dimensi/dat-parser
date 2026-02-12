@@ -1,19 +1,19 @@
 <script lang="ts">
-	import { DEFAULT_ZKEEN_URL } from '$lib/datParser';
+import { DEFAULT_ZKEEN_URL } from "$lib/datParser";
 
-	interface Props {
-		loading?: boolean;
-		onLoad: (url: string) => void;
-	}
+interface Props {
+	loading?: boolean;
+	onLoad: (url: string) => void;
+}
 
-	let { loading = false, onLoad }: Props = $props();
+let { loading = false, onLoad }: Props = $props();
 
-	let inputUrl = $state(DEFAULT_ZKEEN_URL);
+let inputUrl = $state(DEFAULT_ZKEEN_URL);
 
-	function submit() {
-		const u = inputUrl.trim();
-		if (u) onLoad(u);
-	}
+function submit() {
+	const u = inputUrl.trim();
+	if (u) onLoad(u);
+}
 </script>
 
 <div class="flex flex-col gap-2 sm:flex-row sm:items-center">

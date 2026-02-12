@@ -1,86 +1,86 @@
 <script lang="ts">
-  import FileDropZone from "$lib/FileDropZone.svelte";
-  import UrlInput from "$lib/UrlInput.svelte";
-  import CategoryList from "$lib/CategoryList.svelte";
-  import DomainView from "$lib/DomainView.svelte";
-  import CidrView from "$lib/CidrView.svelte";
-  import {
-    parseDatFileAutoInWorker,
-    loadFromUrl,
-    type DatFileResult,
-    type GeoSiteEntry,
-    type GeoIPEntry,
-    type DomainEntry,
-  } from "$lib/datParser";
+import CategoryList from "$lib/CategoryList.svelte";
+import CidrView from "$lib/CidrView.svelte";
+import DomainView from "$lib/DomainView.svelte";
+import {
+	type DatFileResult,
+	type DomainEntry,
+	type GeoIPEntry,
+	type GeoSiteEntry,
+	loadFromUrl,
+	parseDatFileAutoInWorker,
+} from "$lib/datParser";
+import FileDropZone from "$lib/FileDropZone.svelte";
+import UrlInput from "$lib/UrlInput.svelte";
 
-  let fileData = $state<DatFileResult | null>(null);
-  let selectedCategory = $state<string | null>(null);
-  let categoryFilter = $state("");
-  let searchQuery = $state("");
-  let loading = $state(false);
-  let error = $state<string | null>(null);
+let fileData = $state<DatFileResult | null>(null);
+let selectedCategory = $state<string | null>(null);
+let categoryFilter = $state("");
+let searchQuery = $state("");
+let loading = $state(false);
+let error = $state<string | null>(null);
 
-  const entries = $derived(fileData?.data?.entry ?? []);
-  const selectedEntry = $derived(
-    selectedCategory
-      ? (entries.find((e) => e.countryCode === selectedCategory) ?? null)
-      : null,
-  );
-  const domains = $derived(
-    fileData?.kind === "geosite"
-      ? (((selectedEntry as GeoSiteEntry)?.domain ?? []) as DomainEntry[])
-      : [],
-  );
-  const cidrs = $derived(
-    fileData?.kind === "geoip"
-      ? ((selectedEntry as GeoIPEntry | null)?.cidr ?? [])
-      : [],
-  );
+const entries = $derived(fileData?.data?.entry ?? []);
+const selectedEntry = $derived(
+	selectedCategory
+		? (entries.find((e) => e.countryCode === selectedCategory) ?? null)
+		: null,
+);
+const domains = $derived(
+	fileData?.kind === "geosite"
+		? (((selectedEntry as GeoSiteEntry)?.domain ?? []) as DomainEntry[])
+		: [],
+);
+const cidrs = $derived(
+	fileData?.kind === "geoip"
+		? ((selectedEntry as GeoIPEntry | null)?.cidr ?? [])
+		: [],
+);
 
-  async function handleFile(file: File) {
-    error = null;
-    loading = true;
-    try {
-      const buffer = await file.arrayBuffer();
-      const result = await parseDatFileAutoInWorker(buffer);
-      fileData = result;
-      selectedCategory = result.data.entry?.[0]?.countryCode ?? null;
-    } catch (e) {
-      error = e instanceof Error ? e.message : String(e);
-    } finally {
-      loading = false;
-    }
-  }
+async function handleFile(file: File) {
+	error = null;
+	loading = true;
+	try {
+		const buffer = await file.arrayBuffer();
+		const result = await parseDatFileAutoInWorker(buffer);
+		fileData = result;
+		selectedCategory = result.data.entry?.[0]?.countryCode ?? null;
+	} catch (e) {
+		error = e instanceof Error ? e.message : String(e);
+	} finally {
+		loading = false;
+	}
+}
 
-  async function handleLoadUrl(url: string) {
-    error = null;
-    loading = true;
-    try {
-      let buffer: ArrayBuffer;
-      try {
-        const data = await loadFromUrl(url);
-        fileData = { kind: "geosite", data };
-        selectedCategory = data.entry?.[0]?.countryCode ?? null;
-        return;
-      } catch (e) {
-        const proxyUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
-        const res = await fetch(proxyUrl);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        buffer = await res.arrayBuffer();
-      }
-      const result = await parseDatFileAutoInWorker(buffer);
-      fileData = result;
-      selectedCategory = result.data.entry?.[0]?.countryCode ?? null;
-    } catch (e) {
-      error = e instanceof Error ? e.message : String(e);
-    } finally {
-      loading = false;
-    }
-  }
+async function handleLoadUrl(url: string) {
+	error = null;
+	loading = true;
+	try {
+		let buffer: ArrayBuffer;
+		try {
+			const data = await loadFromUrl(url);
+			fileData = { kind: "geosite", data };
+			selectedCategory = data.entry?.[0]?.countryCode ?? null;
+			return;
+		} catch (e) {
+			const proxyUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
+			const res = await fetch(proxyUrl);
+			if (!res.ok) throw new Error(`HTTP ${res.status}`);
+			buffer = await res.arrayBuffer();
+		}
+		const result = await parseDatFileAutoInWorker(buffer);
+		fileData = result;
+		selectedCategory = result.data.entry?.[0]?.countryCode ?? null;
+	} catch (e) {
+		error = e instanceof Error ? e.message : String(e);
+	} finally {
+		loading = false;
+	}
+}
 
-  function selectCategory(code: string) {
-    selectedCategory = code;
-  }
+function selectCategory(code: string) {
+	selectedCategory = code;
+}
 </script>
 
 <div class="mx-auto max-w-6xl space-y-8 px-4 py-8">

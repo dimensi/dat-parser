@@ -1,34 +1,38 @@
 <script lang="ts">
-	/** GeoSiteEntry | GeoIPEntry — both have countryCode and domain[] or cidr[]. */
-	type CategoryEntry = { countryCode: string; domain?: unknown[]; cidr?: unknown[] };
+/** GeoSiteEntry | GeoIPEntry — both have countryCode and domain[] or cidr[]. */
+type CategoryEntry = {
+	countryCode: string;
+	domain?: unknown[];
+	cidr?: unknown[];
+};
 
-	interface Props {
-		entries: CategoryEntry[];
-		selected: string | null;
-		onSelect: (countryCode: string) => void;
-		/** Filter categories by name (optional). */
-		categoryFilter?: string;
-	}
+interface Props {
+	entries: CategoryEntry[];
+	selected: string | null;
+	onSelect: (countryCode: string) => void;
+	/** Filter categories by name (optional). */
+	categoryFilter?: string;
+}
 
-	let { entries, selected, onSelect, categoryFilter = '' }: Props = $props();
+let { entries, selected, onSelect, categoryFilter = "" }: Props = $props();
 
-	const fullList = $derived(
-		entries
-			.filter((e) => e.countryCode)
-			.map((e) => ({
-				code: e.countryCode,
-				count: e.domain?.length ?? e.cidr?.length ?? 0
-			}))
-			.sort((a, b) => a.code.localeCompare(b.code))
-	);
+const fullList = $derived(
+	entries
+		.filter((e) => e.countryCode)
+		.map((e) => ({
+			code: e.countryCode,
+			count: e.domain?.length ?? e.cidr?.length ?? 0,
+		}))
+		.sort((a, b) => a.code.localeCompare(b.code)),
+);
 
-	const list = $derived(
-		categoryFilter.trim()
-			? fullList.filter((item) =>
-					item.code.toLowerCase().includes(categoryFilter.toLowerCase())
-				)
-			: fullList
-	);
+const list = $derived(
+	categoryFilter.trim()
+		? fullList.filter((item) =>
+				item.code.toLowerCase().includes(categoryFilter.toLowerCase()),
+			)
+		: fullList,
+);
 </script>
 
 {#if fullList.length === 0}

@@ -1,48 +1,46 @@
 <script lang="ts">
-	import type { DomainEntry } from '$lib/datParser';
-	import { domainTypeName } from '$lib/datParser';
+import type { DomainEntry } from "$lib/datParser";
+import { domainTypeName } from "$lib/datParser";
 
-	interface Props {
-		domains: DomainEntry[];
-		searchQuery?: string;
-	}
+interface Props {
+	domains: DomainEntry[];
+	searchQuery?: string;
+}
 
-	let { domains = [], searchQuery = '' }: Props = $props();
+let { domains = [], searchQuery = "" }: Props = $props();
 
-	const PAGE_SIZES = [100, 200, 500] as const;
-	let pageSize = $state(200);
-	let currentPage = $state(1);
+const PAGE_SIZES = [100, 200, 500] as const;
+let pageSize = $state(200);
+let currentPage = $state(1);
 
-	const filtered = $derived(
-		searchQuery.trim()
-			? domains.filter((d) =>
-					d.value.toLowerCase().includes(searchQuery.toLowerCase())
-				)
-			: domains
-	);
+const filtered = $derived(
+	searchQuery.trim()
+		? domains.filter((d) =>
+				d.value.toLowerCase().includes(searchQuery.toLowerCase()),
+			)
+		: domains,
+);
 
-	const totalPages = $derived(Math.max(1, Math.ceil(filtered.length / pageSize)));
-	const page = $derived(Math.min(currentPage, totalPages));
-	const slice = $derived(
-		filtered.slice((page - 1) * pageSize, page * pageSize)
-	);
+const totalPages = $derived(Math.max(1, Math.ceil(filtered.length / pageSize)));
+const page = $derived(Math.min(currentPage, totalPages));
+const slice = $derived(filtered.slice((page - 1) * pageSize, page * pageSize));
 
-	$effect(() => {
-		searchQuery;
-		domains.length;
-		currentPage = 1;
-	});
+$effect(() => {
+	searchQuery;
+	domains.length;
+	currentPage = 1;
+});
 
-	const typeLabel = (type: number) => {
-		const t = domainTypeName(type);
-		const map: Record<string, string> = {
-			Plain: 'keyword',
-			Regex: 'regexp',
-			RootDomain: 'domain',
-			Full: 'full'
-		};
-		return map[t] ?? String(type);
+const typeLabel = (type: number) => {
+	const t = domainTypeName(type);
+	const map: Record<string, string> = {
+		Plain: "keyword",
+		Regex: "regexp",
+		RootDomain: "domain",
+		Full: "full",
 	};
+	return map[t] ?? String(type);
+};
 </script>
 
 {#if filtered.length === 0}

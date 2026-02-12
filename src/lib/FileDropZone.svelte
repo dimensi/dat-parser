@@ -1,36 +1,36 @@
 <script lang="ts">
-	interface Props {
-		onFile: (file: File) => void;
-		disabled?: boolean;
-	}
+interface Props {
+	onFile: (file: File) => void;
+	disabled?: boolean;
+}
 
-	let { onFile, disabled = false }: Props = $props();
+let { onFile, disabled = false }: Props = $props();
 
-	let dragging = $state(false);
+let dragging = $state(false);
 
-	function handleDrop(e: DragEvent) {
-		e.preventDefault();
-		dragging = false;
-		if (disabled) return;
-		const file = e.dataTransfer?.files?.[0];
-		if (file) onFile(file);
-	}
+function handleDrop(e: DragEvent) {
+	e.preventDefault();
+	dragging = false;
+	if (disabled) return;
+	const file = e.dataTransfer?.files?.[0];
+	if (file) onFile(file);
+}
 
-	function handleDragOver(e: DragEvent) {
-		e.preventDefault();
-		if (!disabled) dragging = true;
-	}
+function handleDragOver(e: DragEvent) {
+	e.preventDefault();
+	if (!disabled) dragging = true;
+}
 
-	function handleDragLeave() {
-		dragging = false;
-	}
+function handleDragLeave() {
+	dragging = false;
+}
 
-	function handleChange(e: Event) {
-		const input = e.target as HTMLInputElement;
-		const file = input.files?.[0];
-		if (file) onFile(file);
-		input.value = '';
-	}
+function handleChange(e: Event) {
+	const input = e.target as HTMLInputElement;
+	const file = input.files?.[0];
+	if (file) onFile(file);
+	input.value = "";
+}
 </script>
 
 <div
