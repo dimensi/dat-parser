@@ -6,11 +6,13 @@
 		entries: CategoryEntry[];
 		selected: string | null;
 		onSelect: (countryCode: string) => void;
+		/** Filter categories by name (optional). */
+		categoryFilter?: string;
 	}
 
-	let { entries, selected, onSelect }: Props = $props();
+	let { entries, selected, onSelect, categoryFilter = '' }: Props = $props();
 
-	const list = $derived(
+	const fullList = $derived(
 		entries
 			.filter((e) => e.countryCode)
 			.map((e) => ({
@@ -19,12 +21,25 @@
 			}))
 			.sort((a, b) => a.code.localeCompare(b.code))
 	);
+
+	const list = $derived(
+		categoryFilter.trim()
+			? fullList.filter((item) =>
+					item.code.toLowerCase().includes(categoryFilter.toLowerCase())
+				)
+			: fullList
+	);
 </script>
 
-{#if list.length === 0}
+{#if fullList.length === 0}
 	<p class="text-sm text-slate-500 dark:text-slate-400">Нет категорий</p>
 {:else}
-	<ul class="flex flex-col gap-1" role="list">
+	{#if list.length === 0}
+		<p class="text-sm text-slate-500 dark:text-slate-400">
+			Нет категорий по запросу «{categoryFilter}»
+		</p>
+	{:else}
+		<ul class="flex flex-col gap-1" role="list">
 		{#each list as { code, count } (code)}
 			<li>
 				<button
@@ -40,4 +55,5 @@
 			</li>
 		{/each}
 	</ul>
+	{/if}
 {/if}
